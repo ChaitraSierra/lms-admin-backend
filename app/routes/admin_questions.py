@@ -1,0 +1,88 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from uuid import uuid4
+
+from ..database import SessionLocal
+from ..models import Question
+from ..schemas import QuestionCreate
+
+router = APIRouter(prefix="/admin/questions", tags=["Admin Questions"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# CREATE QUESTION
+@router.post("")
+def create_question(payload: QuestionCreate, db: Session = Depends(get_db)):
+    question = Question(
+        uuid=uuid4(),
+        title=payload.title,
+        description=payload.description,
+        difficulty=payload.difficulty,
+        tags=payload.tags,
+        time_limit=payload.time_limit,
+        memory_limit=payload.memory_limit,
+        question_data=payload.question_data
+    )
+
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+
+    return {
+        "uuid": str(question.uuid),
+        "message": "Question created successfully"
+    }
+
+
+# LIST QUESTIONS
+@router.get("")
+def list_questions(db: Session = Depends(get_db)):
+    questions = (
+        db.query(Question)
+        .filter(Question.deleted_at == None)
+        .order_by(Question.created_at.desc())
+        .all()
+    )
+
+    return [
+        {
+            "uuid": str(q.uuid),
+            "title": q.title,
+            "difficulty": q.difficulty,
+            "tags":q.tags,
+            "created_at": q.created_at
+        }
+        for q in questions
+    ]
+
+
+# GET SINGLE QUESTION
+@router.get("/{uuid}")
+def get_question(uuid: str, db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.uuid == uuid).first()
+
+    if not q:
+        return {"error": "Question not found"}
+
+    return q
+
+
+# SOFT DELETE
+@router.delete("/{uuid}")
+def delete_question(uuid: str, db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.uuid == uuid).first()
+
+    if not q:
+        return {"error": "Question not found"}
+
+    from sqlalchemy.sql import func
+    q.deleted_at = func.now()
+    db.commit()
+
+    return {"message": "Question deleted"}
