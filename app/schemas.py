@@ -18,3 +18,23 @@ class QuestionResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class QuestionUpdate(BaseModel):
+    title: str
+    description: str
+    difficulty: str
+    tags: str
+    time_limit: int
+    memory_limit: int
+    question_data: Dict[str, Any]
+
+
+class QuestionPatch(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    difficulty: Optional[str] = None
+    tags: Optional[str] = None
+    time_limit: Optional[int] = None
+    memory_limit: Optional[int] = None
+    question_data: Optional[Dict[str, Any]] = None

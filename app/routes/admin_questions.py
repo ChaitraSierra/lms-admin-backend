@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,HTTPException
 from sqlalchemy.orm import Session
 from uuid import uuid4
+from uuid import UUID
 
 from ..database import SessionLocal
 from ..models import Question
-from ..schemas import QuestionCreate
+from ..schemas import QuestionCreate,QuestionUpdate,QuestionPatch
 
 router = APIRouter(prefix="/admin/questions", tags=["Admin Questions"])
 
@@ -64,13 +65,23 @@ def list_questions(db: Session = Depends(get_db)):
 
 # GET SINGLE QUESTION
 @router.get("/{uuid}")
-def get_question(uuid: str, db: Session = Depends(get_db)):
+def get_question(uuid:UUID, db: Session = Depends(get_db)):
     q = db.query(Question).filter(Question.uuid == uuid).first()
 
     if not q:
-        return {"error": "Question not found"}
+        raise HTTPException(status_code=404,detail="Question not found")
 
-    return q
+    return {
+    "uuid": str(q.uuid),
+    "title": q.title,
+    "description": q.description,
+    "difficulty": q.difficulty,
+    "tags": q.tags,
+    "time_limit": q.time_limit,
+    "memory_limit": q.memory_limit,
+    "question_data": q.question_data
+}
+
 
 
 # SOFT DELETE
@@ -86,3 +97,69 @@ def delete_question(uuid: str, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Question deleted"}
+
+
+# PUT METHOD
+@router.put("/{uuid}")
+def update_question(uuid:UUID, payload:QuestionUpdate,db:Session=Depends(get_db)):
+    question=(
+        db.query(Question).
+        filter(Question.uuid==uuid,
+               Question.deleted_at==None)
+            ).first();
+    
+    if not question:
+        raise HTTPException(status_code=404,detail="Question was not found")
+    
+    question.title=payload.title
+    question.description=payload.description
+    question.difficulty=payload.difficulty
+    question.tags=payload.tags
+    question.question_data=payload.question_data
+    question.time_limit=payload.time_limit
+    question.memory_limit=payload.memory_limit
+    
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+    
+    return {
+        "message": "Question Updated successfully",
+        "uuid":str(question.uuid),
+        "title":question.title,
+        "description":question.description
+    }
+     
+
+
+
+# Patch Method
+@router.patch("/{uuid}")
+def partial_update_question(uuid:UUID, payload:QuestionPatch,db:Session=Depends(get_db)):
+    question=(
+            db.query(Question)
+            .filter(Question.uuid==uuid,
+                    Question.deleted_at.is_(None)
+                    )
+    ).first()
+    
+    if not question:
+        raise HTTPException(status_code=404,detail="Question not found")
+    
+    update_data=payload.model_dump(exclude_unset=True)
+    
+    for fields,values in update_data.items():
+        setattr(question,fields,values)
+        
+        
+    db.commit()
+    db.refresh(question)
+    
+    return{
+        "message": "Question field/fields updated successfully",
+        "uuid":question.uuid,
+        "title":question.title,
+        "description":question.description
+        
+    }
+    
