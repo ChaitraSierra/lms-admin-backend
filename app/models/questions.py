@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from uuid import uuid4
 
-from .database import Base
+from ..database import Base
 
 
 class Question(Base):

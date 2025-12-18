@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from uuid import uuid4
 from uuid import UUID
 
-from ..database import SessionLocal
-from ..models import Question
-from ..schemas import QuestionCreate,QuestionUpdate,QuestionPatch
+from ...database import SessionLocal
+from ...models.questions import Question
+from ...schemas.questions import QuestionCreate,QuestionUpdate,QuestionPatch
 
 router = APIRouter(prefix="/admin/questions", tags=["Admin Questions"])
 
@@ -90,13 +90,17 @@ def delete_question(uuid: UUID, db: Session = Depends(get_db)):
     q = db.query(Question).filter(Question.uuid == uuid , Question.deleted_at.is_(None)).first()
 
     if not q:
-        return {"error": "Question not found"}
+        raise HTTPException(status_code=404,detail="Question was not found !")
 
     from sqlalchemy.sql import func
     q.deleted_at = func.now()
     db.commit()
 
-    return {"message": "Question deleted"}
+    return {
+        "message": "Question deleted",
+        "uuid": q.uuid,
+        "title": q.title
+        }
 
 
 # PUT METHOD
