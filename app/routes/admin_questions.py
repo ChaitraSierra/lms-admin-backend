@@ -66,7 +66,7 @@ def list_questions(db: Session = Depends(get_db)):
 # GET SINGLE QUESTION
 @router.get("/{uuid}")
 def get_question(uuid:UUID, db: Session = Depends(get_db)):
-    q = db.query(Question).filter(Question.uuid == uuid).first()
+    q = db.query(Question).filter(Question.uuid == uuid , Question.deleted_at.is_(None)).first()
 
     if not q:
         raise HTTPException(status_code=404,detail="Question not found")
@@ -86,8 +86,8 @@ def get_question(uuid:UUID, db: Session = Depends(get_db)):
 
 # SOFT DELETE
 @router.delete("/{uuid}")
-def delete_question(uuid: str, db: Session = Depends(get_db)):
-    q = db.query(Question).filter(Question.uuid == uuid).first()
+def delete_question(uuid: UUID, db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.uuid == uuid , Question.deleted_at.is_(None)).first()
 
     if not q:
         return {"error": "Question not found"}
