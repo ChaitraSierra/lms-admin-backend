@@ -1,33 +1,51 @@
 from pydantic import BaseModel
+from uuid import UUID
 from typing import Optional, Dict, Any
 
 class QuestionCreate(BaseModel):
     title: str
-    description: Optional[str]
-    difficulty: Optional[str]
-    tags: Optional[str]
-    time_limit: Optional[int]
-    memory_limit: Optional[int]
-    question_data: Dict[str, Any]
+    question_data:Dict[str,Any]
+    
+    description: Optional[str] = None
+    difficulty: Optional[str] = None
+    tags: Optional[str] = None
+    time_limit: Optional[int] = None
+    memory_limit: Optional[int] = None
 
-
-class QuestionResponse(BaseModel):
-    uuid: str
+class QuestionListResponse(BaseModel):
+    uuid: UUID
     title: str
     difficulty: Optional[str]
+    time_limit:Optional[int]
+    tags: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+        
+        
+class QuestionResponse(BaseModel):
+   uuid: UUID
+   title: str
+   description: Optional[str]
+   difficulty: Optional[str]
+   tags: Optional[str]
+   time_limit: Optional[int]
+   memory_limit: Optional[int]
+   question_data: Dict[str, Any]
+   
+   class Config:
+        from_attributes = True
 
 
 class QuestionUpdate(BaseModel):
-    title: str
-    description: str
-    difficulty: str
-    tags: str
-    time_limit: int
-    memory_limit: int
-    question_data: Dict[str, Any]
+     title: str
+     question_data:Dict[str,Any]
+     
+     description: Optional[str] = None
+     difficulty: Optional[str] = None
+     tags: Optional[str] = None
+     time_limit: Optional[int] = None
+     memory_limit: Optional[int] = None
 
 
 class QuestionPatch(BaseModel):
